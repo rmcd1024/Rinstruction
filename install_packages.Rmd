@@ -1,0 +1,30 @@
+---
+title: "Package install helper"
+output: html_document
+colorlinks: true
+linkcolor: 'cyan'
+---
+
+```{r pkglist, echo=FALSE, message=FALSE}
+pkgs <- c('knitr', 'rmarkdown', 'tidyverse', 'lasso2', 'aslkdjfs')
+```
+
+```{r pkginit, echo=FALSE, message=FALSE}
+pkglink = function(pkg)
+    paste('[', pkg, '](http://cran.r-project.org/web/packages/',
+          pkg,'/index.html)', sep='')
+##
+## check what's installed and install if needed
+##
+pkgs.installed <- installed.packages()[, 'Package']
+needtoinstall <- setdiff(pkgs, pkgs.installed)
+repo <- 'https://mirror.las.iastate.edu/CRAN/'
+if (length(needtoinstall) > 0) install.packages(needtoinstall,
+                                                repo=repo)
+```
+
+I checked the install status of the following packages: 
+`r lapply(sort(pkgs), pkglink)`.
+
+I attempted installation of the following packages: 
+`r ifelse(length(needtoinstall)==0, 'None', lapply(sort(needtoinstall), pkglink))`.
