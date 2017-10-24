@@ -1,0 +1,454 @@
+---
+title: "R four ways (plus a few)"
+author: "Robert McDonald"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: 
+    number_sections: yes
+  html_document: default
+  beamer_presentation:
+    slide_level: 2
+toc: false
+urlcolor: 'magenta'
+---
+
+```{r setup, include=FALSE}
+evalsql <- FALSE; conn <- FALSE
+evalsql <- TRUE
+library(knitr)
+knitr::opts_chunk$set(echo = TRUE,
+                      collapse = TRUE,
+                      comment = NA, 
+                      message = FALSE,
+                      warning = FALSE
+                      ,cache = TRUE
+                      )
+evalbool=TRUE
+## evalbool=FALSE
+load('~/git/rmcd/Rinstruction/password.Rdata')
+setwd('/home/rmcd/tex/dataexploration/')
+```
+
+```{r, echo=FALSE}
+library(tidyverse)
+library(dbplyr)
+library(DBI)
+library(RPostgreSQL)
+```
+
+## Introduction 
+
+* The Social Security Administration provides [state-level babynames
+data](https://www.ssa.gov/oact/babynames/state/namesbystate.zip)
+annually since 1910.
+
+* Create  a single file containing all 
+state-level babyname data with the shell command 
+```
+cat *.TXT > allstates.TXT
+```
+
+* The resulting file has 5.8 million rows and no
+header. 
+
+## File contents
+
+* Using the `head` command (in Bash):
+
+\footnotesize
+
+```{bash}
+head -n 6 data/allstates.TXT
+```
+\normalsize
+
+The fields (i.e., columns) are:
+
+* state, a two-digit abbreviation
+* sex, M or F
+* year, yyyy
+* name
+* number of births
+
+## The tasks
+
+* Four basic data manipulation tasks:
+
+1. Count the number of distinct states in the data
+2. Count the number of distinct years in the data
+2. Count the number of distinct names in the data
+1. Create a new CSV file that contains the top 10 names, by sex, for
+each year.
+
+We will use Base R with and without loops, `dplyr`, and `data.table`
+
+## R: Base R
+
+* Natural instinct for this problem is to write a loop. 
+* Apart from speed, we will see that this is relatively clumsy.
+* Don't be afraid of loops, and don't be in love with them
+
+## Using loops
+
+
+\footnotesize
+
+```{r solnbase_loop, eval=FALSE}
+x = read.csv('data/allstates.TXT', header=FALSE,
+             stringsAsFactors=FALSE)
+names(x) <- c('state', 'sex', 'year', 'name', 'n')
+print(length(table(x$state))) 
+print(length(table(x$year)))
+print(length(table(x$name)))
+xa <- aggregate(n ~ year + sex + name, data=x, FUN=sum)
+xa <- xa[order(xa$year, xa$sex, -xa$n), ]
+top10 <- data.frame()
+for (i in unique(xa$year)) {
+  for (j in unique(xa$sex)) {
+    tmp = head(subset(xa, xa$year == i & xa$sex == j), n=10)
+    top10 <- rbind(top10, tmp, make.row.names=FALSE)
+  }
+}
+write.csv(top10, file='data/babynames10Rbase_loop.csv',
+          row.names=FALSE)
+print(head(top10))
+```
+\normalsize
+
+## Results: R with explicit loops
+
+
+\footnotesize
+
+```{r, echo=FALSE}
+system.time({
+<<solnbase_loop>>
+})
+```
+\normalsize
+
+
+## Without explicit loops
+
+* Loops can generally be avoided. 
+* This may be less transparent than the code with loops however...
+
+\footnotesize
+
+
+```{r solnbase_noloop, eval=FALSE, echo=TRUE}
+x = read.csv('data/allstates.TXT', header=FALSE,
+             stringsAsFactors=FALSE)
+names(x) <- c('state', 'sex', 'year', 'name', 'n')
+print(length(table(x$state))) ## note the similarity to python
+print(length(table(x$year)))
+print(length(table(x$name)))
+xa <- aggregate(n ~ year + sex + name, data=x, FUN=sum)
+xa <- xa[order(xa$year, xa$sex, -xa$n), ]
+xatop10 <- by(xa, list(xa$year, xa$sex), head, n=10)
+top10 <- do.call(rbind, xatop10)
+write.csv(top10, file='data/babynames10Rbase_noloop.csv',
+          row.names=FALSE)
+print(head(top10))
+```
+
+\normalsize
+
+## Results: R without explicit loops
+
+\footnotesize
+
+```{r, echo=FALSE}
+system.time({
+<<solnbase_noloop>>
+})
+```
+
+\normalsize
+
+\newpage
+
+## Aside: `read.csv` vs `read_csv` {#r-csv-speed}
+
+
+* How fast are the different functions for reading csv files?. 
+* Note that `read_csv` without column types will throw an error
+because it tries to treat `sex` as logical (please no jokes...)
+
+\footnotesize
+
+```{r}
+system.time(x <- read.csv('data/allstates.TXT',
+                          header=FALSE))
+system.time(
+    x <- read_csv('data/allstates.TXT',
+                  progress=FALSE,
+                  col_names=c('state', 'sex', 'year', 'name', 'n'),
+                  col_types = cols(sex = col_character())
+                  )
+)
+
+```
+
+\normalsize
+
+
+
+## R: `dplyr` {#dplyr}
+
+* Manipulate data with echoes of CSV 
+
+\footnotesize
+
+```{r soln_dplyr, eval=FALSE}
+system.time({
+x <- read_csv('data/allstates.TXT',
+             col_names=c('state', 'sex', 'year', 'name', 'n'),
+             col_types = cols(sex = col_character())
+             )
+print(nrow(distinct(x, state)))
+print(nrow(distinct(x, year)))
+print(nrow(distinct(x, name)))
+out = x %>% 
+  group_by(year, sex, name) %>% 
+  summarize(n = sum(n)) %>% 
+  filter(row_number(desc(n)) <= 10) %>% 
+  arrange(year, sex, desc(n))
+write_csv(out, path='data/babynames10Rdplyr.csv')
+print(head(out))
+})
+```
+
+\normalsize
+
+## Results: dplyr
+
+\footnotesize
+
+```{r soln_dplyr_time, eval=TRUE, echo=FALSE}
+system.time({
+<<soln_dplyr>>
+})
+```
+
+\normalsize
+
+
+\newpage
+
+## R: `data.table`
+
+* `data.table` is designed explicitly for manipulation of large data
+sets.  The syntax is more abstract than in `dplyr`
+* Like dplyr, it permits chaining commands. 
+* For a data table, `DT`, with row `i`, column `j`, grouped by `by`,
+  the syntax is `DT[i, j, by]`
+
+\footnotesize
+
+```{r soln_datatable, eval=FALSE}
+library(data.table)
+y <- fread("data/allstates.TXT",
+           col.names=c('state', 'sex', 'year', 'name', 'n'))
+print(y[, uniqueN(state)])
+print(y[, uniqueN(year)])
+print(y[, uniqueN(name)])
+y2 = y[, .(total = sum(n)), by=.(year, sex, name)][
+  order(year, sex, -total)]
+out = y2[, head(.SD, 10),  by=.(year, sex)]
+fwrite(out, file='data/babynames10RDT.csv')
+print(head(out))
+```
+
+\normalsize
+
+## Results: `data.table`
+
+\footnotesize
+
+```{r soln_datatable_time, echo=FALSE}
+system.time({
+<<soln_datatable>>
+})    
+```
+
+\normalsize
+
+\newpage
+	
+## Creating an SQL Connection
+
+* It is also possible to use dplyr with an SQL connection
+* SQL database usually have their own passwords
+	* Password security becomes an issue when creating scripts. Two
+solutions are the `keyringr` package, which reads your local keyring,
+and the `getPass` package, which will prompt you for the password when
+making a connection.)
+
+\footnotesize
+
+```{r sql, message=FALSE, cache=FALSE, eval=evalsql}
+conn = DBI::dbConnect(RPostgreSQL::PostgreSQL(),
+                      user=username,
+                      password=pw, 
+                      dbname='babynames_by_state',
+                      host='localhost')
+```
+\normalsize
+
+
+
+\newpage
+
+## R, using a connection to an SQL database
+
+* A database connection can be used with either SQL or R. 
+* This shows that the same `dplyr` code as before works the remote
+database 
+
+\footnotesize
+
+```{r dplyr_sql, echo=TRUE, eval=FALSE, comment=FALSE}
+names.tbl <- tbl(conn, 'names')
+names.tbl %>% select(state) %>% distinct %>% count
+names.tbl %>% select(year) %>% distinct %>% count
+names.tbl %>% select(name) %>% distinct %>% count
+tmp <- names.tbl %>% 
+    group_by(year, sex, name) %>%
+    summarize(total=sum(n)) %>% 
+    arrange(year, sex, -total) %>% 
+    filter(row_number() <= 10)
+print(head(tmp))
+```
+
+\normalsize
+
+## Results: SQL via `dplyr`
+
+* It's hard to assess the relative speed because the remote SQL engine
+and network play a role
+
+\footnotesize
+
+```{r, echo=FALSE, eval=evalsql}
+system.time({
+<<dplyr_sql>>
+})
+```
+
+\normalsize
+
+
+## The `dplyr` query
+
+* Use `show_query()` to examine the query constructed by `dplyr`
+
+\tiny
+
+```{r, message=TRUE, eval=evalsql}
+show_query(tmp)
+```
+
+\normalsize
+
+
+## Manipulation using SQL
+
+*  Access the SQL connection by setting `connection=conn` in the the
+   chunk options.
+
+\scriptsize
+
+```{sql, connection=conn, eval=evalsql}
+select count(distinct state) from names;
+```
+
+```{sql, connection=conn, eval=evalsql}
+select count(distinct year) from names;
+```
+
+```{sql, connection=conn, eval=evalsql}
+select count(distinct name) from names;
+```
+
+\normalsize
+
+
+## Direct SQL
+
+* The following chunk is pure SQL. The result of the statement will be
+  assigned to the data frame `babynames10sql`, specified in the chunk
+  options as `output.var='babynames10sql'`.
+  
+\scriptsize  
+  
+```{sql, connection='conn', output.var='babynames10sql', eval=evalsql}
+-- name the output with chunk option "output.var='babynames10sql'""
+create temp table tmp as
+select * from 
+(
+select  name, year, sex, SUM(n),
+ROW_NUMBER () OVER (
+PARTITION BY year, sex
+order by year, sex, sum(n) desc
+) 
+from names
+group by year, sex, name
+order by year, sex, sum desc
+) as foo 
+where row_number <= 10;
+select year, sex, name, sum from tmp;
+```
+
+\normalsize
+
+
+## Back to R to look at the results...
+
+* Now we're using R again.
+
+\footnotesize
+
+```{r, eval=evalsql}
+head(babynames10sql)
+write_csv(babynames10sql, path='data/babynames10sql.csv')
+
+```
+
+\normalsize
+
+```{r, echo=FALSE, results=FALSE, eval=evalsql}
+dbDisconnect(conn)
+```
+
+\newpage
+
+## Command line
+
+*  You can use the command line to do some of this.
+*  The works in Linux, OS X, and Windows with either git-bash or the
+[Linux Subsystem for
+Windows](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide).
+
+\footnotesize
+
+```{bash, eval=TRUE}
+## Number of states
+cut -d, -f1 data/allstates.TXT | uniq |  wc -l
+```
+```{bash}
+## Number of years
+cut -d, -f3 data/allstates.TXT | uniq | sort | uniq | wc -l
+```
+```{bash}
+## Number of names
+cut -d, -f4 data/allstates.TXT | uniq | sort | uniq | wc -l
+```
+
+\normalsize
+
+## Conclusions
+
+* Use `dplyr` or `data.table` (especially for large data)
+* Learn the command line
+
