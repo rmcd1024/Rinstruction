@@ -8,7 +8,7 @@ This repository will store items useful in teaching R.
   or anything sophisticated. Warnings for uninstalled packages should
   be printed at the top of the document.
 
-* [`R-four-ways`](r-four-ways.html) This compares and benchmarks
+* [`R-four-ways`](r-four-ways.pdf) This compares and benchmarks
   different methods of accomplishing the same calculations.^[The file
   contains examples of accessing a password-protected PostgreSQL
 	  server. The username and password are not public] 
