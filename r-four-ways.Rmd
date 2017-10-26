@@ -1,6 +1,8 @@
 ---
 title: "R four ways (plus a few)"
-author: "Robert McDonald"
+author: |
+    | Robert McDonald
+    | Kellogg School, Northwestern University
 date: "`r Sys.Date()`"
 output:
   pdf_document: 
@@ -26,7 +28,6 @@ knitr::opts_chunk$set(echo = TRUE,
 evalbool=TRUE
 ## evalbool=FALSE
 load('~/git/rmcd/Rinstruction/password.Rdata')
-setwd('/home/rmcd/tex/dataexploration/')
 ```
 
 ```{r, echo=FALSE}
@@ -192,7 +193,37 @@ system.time(
 
 \normalsize
 
+## What about saving and reading in R format?
 
+* Contrast `save` and `load` with `saveRDS(compress=FALSE)` and
+  `readRDS`
+* Saving first; compression slows things down a lot
+
+
+\footnotesize
+   
+```{r}
+system.time(save(x, file='/tmp/save.Rdata'))
+system.time(save(x, file='/tmp/save2.Rdata', compress=FALSE))
+system.time(saveRDS(x, file='/tmp/save.RDS', compress=FALSE))
+cat(system('ls -al /tmp/save*', intern=TRUE), sep='\n')
+```
+
+\normalsize
+
+## Reading the files back in
+
+\footnotesize
+
+```{r}
+system.time(load('/tmp/save.Rdata'))
+system.time(load('/tmp/save2.Rdata'))
+system.time(y <- readRDS(file='/tmp/save.RDS'))
+```
+
+\normalsize
+
+* The actual relative times depend on both CPU speed and disk speed
 
 ## R: `dplyr` {#dplyr}
 
@@ -450,5 +481,5 @@ cut -d, -f4 data/allstates.TXT | uniq | sort | uniq | wc -l
 ## Conclusions
 
 * Use `dplyr` or `data.table` (especially for large data)
+* For large files, save uncompressed
 * Learn the command line
-

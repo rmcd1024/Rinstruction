@@ -9,6 +9,8 @@ This repository will store items useful in teaching R.
   be printed at the top of the document.
 
 * [`R-four-ways`](r-four-ways.html) This compares and benchmarks
-  different methods of accomplishing the same calculations
+  different methods of accomplishing the same calculations.^[The file
+  contains examples of accessing a password-protected PostgreSQL
+	  server. The username and password are not public] 
   
   
