@@ -227,7 +227,7 @@ system.time(y <- readRDS(file='/tmp/save.RDS'))
 
 ## R: `dplyr` {#dplyr}
 
-* Manipulate data with echoes of CSV 
+* Manipulate data with echoes of SQL 
 
 \footnotesize
 
