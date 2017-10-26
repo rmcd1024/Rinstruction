@@ -1,6 +1,6 @@
 This repository will store items useful in teaching R.
 
-* [`install_packages.Rmd`](install.packages.Rmd) You can distribute
+* [`install_packages.Rmd`](install_packages.Rmd) You can distribute
   this as a markdown file.  You specify package names in the `pkgs`
   variable. You have others compile the file in RStudio (for example),
   and it will install the packages you have specified if they do not
