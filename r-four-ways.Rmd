@@ -5,8 +5,6 @@ author: |
     | Kellogg School, Northwestern University
 date: "`r Sys.Date()`"
 output:
-  pdf_document: 
-    number_sections: yes
   html_document: default
   beamer_presentation:
     slide_level: 2
@@ -81,7 +79,8 @@ The fields (i.e., columns) are:
 1. Create a new CSV file that contains the top 10 names, by sex, for
 each year.
 
-We will use Base R with and without loops, `dplyr`, and `data.table`
+* We will use Base R with and without loops, `dplyr`, and `data.table`
+* The challenge is finding the right level of abstraction for a given problem
 
 ## R: Base R
 
@@ -89,7 +88,57 @@ We will use Base R with and without loops, `dplyr`, and `data.table`
 * Apart from speed, we will see that this is relatively clumsy.
 * Don't be afraid of loops, and don't be in love with them
 
-## Using loops
+## Using only loops
+
+* The following is *very* slow. Experienced R users will wince at the code.
+
+
+\tiny
+
+```{r solnbase_loop2, eval=FALSE}
+x = read.csv('data/allstates.TXT', header=FALSE,
+             stringsAsFactors=FALSE)
+names(x) <- c('state', 'sex', 'year', 'name', 'n')
+print(length(table(x$state))) 
+print(length(table(x$year)))
+print(length(table(x$name)))
+top10 <- list()
+sexes <- unique(x$sex)
+for (i in unique(x$year)) {
+    for (j in sexes) {
+        tmp <- x[x$year == i & x$sex == j, ]
+        names <- unique(tmp$name)
+        lnames <- length(names)
+        nvec <- vector(length=lnames)
+        for (k in 1:lnames) {
+            nvec[k] <- sum(tmp$n[tmp$name == names[k]])
+        }
+        tmp <- data.frame(year=i, sex=j, name=names, n=nvec)
+        tmp <- tmp[order(-tmp$n), ]
+        top10 <- rbind(top10, head(tmp, n=10), make.row.names=FALSE)
+    }
+}
+write.csv(top10, file='data/babynames10Rbase_loop2.csv',
+          row.names=FALSE)
+print(head(top10))
+```
+
+\normalsize
+
+## Results: R with explicit loops
+
+
+\footnotesize
+
+```{r time_solnbase_loop2, echo=FALSE}
+system.time({
+<<solnbase_loop2>>
+})
+```
+\normalsize
+
+
+## R with some loops
 
 
 \footnotesize
@@ -105,23 +154,28 @@ xa <- aggregate(n ~ year + sex + name, data=x, FUN=sum)
 xa <- xa[order(xa$year, xa$sex, -xa$n), ]
 top10 <- data.frame()
 for (i in unique(xa$year)) {
-  for (j in unique(xa$sex)) {
-    tmp = head(subset(xa, xa$year == i & xa$sex == j), n=10)
-    top10 <- rbind(top10, tmp, make.row.names=FALSE)
+    for (j in unique(xa$sex)) {
+        tmp = head(subset(xa, xa$year == i & xa$sex == j), n=10)
+        top10 <- rbind(top10, tmp, make.row.names=FALSE)
   }
 }
 write.csv(top10, file='data/babynames10Rbase_loop.csv',
           row.names=FALSE)
 print(head(top10))
+
 ```
+
 \normalsize
 
-## Results: R with explicit loops
 
+
+## Results: R with some loops
+
+* Better, but still clunky
 
 \footnotesize
 
-```{r, echo=FALSE}
+```{r time_solnbase_loop, echo=FALSE}
 system.time({
 <<solnbase_loop>>
 })
@@ -131,8 +185,9 @@ system.time({
 
 ## Without explicit loops
 
-* Loops can generally be avoided. 
-* This may be less transparent than the code with loops however...
+* Avoiding loops leads to cleaner, more "R-ish" code.
+* Some may find this less transparent and it is faster, but not by
+  much.
 
 \footnotesize
 
@@ -159,7 +214,7 @@ print(head(top10))
 
 \footnotesize
 
-```{r, echo=FALSE}
+```{r time_solnbase_noloop, echo=FALSE}
 system.time({
 <<solnbase_noloop>>
 })
@@ -202,7 +257,7 @@ system.time(
 
 \footnotesize
    
-```{r}
+```{r time_write}
 system.time(save(x, file='/tmp/save.Rdata'))
 system.time(save(x, file='/tmp/save2.Rdata', compress=FALSE))
 system.time(saveRDS(x, file='/tmp/save.RDS', compress=FALSE))
@@ -215,7 +270,7 @@ cat(system('ls -al /tmp/save*', intern=TRUE), sep='\n')
 
 \footnotesize
 
-```{r}
+```{r time_read}
 system.time(load('/tmp/save.Rdata'))
 system.time(load('/tmp/save2.Rdata'))
 system.time(y <- readRDS(file='/tmp/save.RDS'))
@@ -227,12 +282,11 @@ system.time(y <- readRDS(file='/tmp/save.RDS'))
 
 ## R: `dplyr` {#dplyr}
 
-* Manipulate data with echoes of SQL 
+* Manipulate data with echoes of SQL. The code focuses on the task
 
 \footnotesize
 
 ```{r soln_dplyr, eval=FALSE}
-system.time({
 x <- read_csv('data/allstates.TXT',
              col_names=c('state', 'sex', 'year', 'name', 'n'),
              col_types = cols(sex = col_character())
@@ -243,11 +297,11 @@ print(nrow(distinct(x, name)))
 out = x %>% 
   group_by(year, sex, name) %>% 
   summarize(n = sum(n)) %>% 
-  filter(row_number(desc(n)) <= 10) %>% 
-  arrange(year, sex, desc(n))
+  arrange(year, sex, desc(n)) %>%
+  filter(row_number(desc(n)) <= 10)
+##  do(head(., n=10))  ## works in place of filter
 write_csv(out, path='data/babynames10Rdplyr.csv')
 print(head(out))
-})
 ```
 
 \normalsize
@@ -310,7 +364,7 @@ system.time({
 ## Creating an SQL Connection
 
 * It is also possible to use dplyr with an SQL connection
-* SQL database usually have their own passwords
+* SQL databases usually have their own passwords
 	* Password security becomes an issue when creating scripts. Two
 solutions are the `keyringr` package, which reads your local keyring,
 and the `getPass` package, which will prompt you for the password when
@@ -482,4 +536,13 @@ cut -d, -f4 data/allstates.TXT | uniq | sort | uniq | wc -l
 
 * Use `dplyr` or `data.table` (especially for large data)
 * For large files, save uncompressed
-* Learn the command line
+* Some loops are okay, but using loops for everything kills
+  performance and takes too much time to code
+* Learn to use the command line
+	* If you are using Linux or OS X, you have what you need
+	* If you are using Windows, you will need to install either
+      [git-bash](https://git-for-windows.github.io/) or the [Linux
+      Subsystem for
+      Windows](https://msdn.microsoft.com/en-us/commandline/wsl/install_guide)
+      (only for Windows 10)
+

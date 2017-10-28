@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2017-10-26" />
+<meta name="date" content="2017-10-28" />
 
 <title>R four ways (plus a few)</title>
 
@@ -119,7 +119,7 @@ $(document).ready(function () {
 <h1 class="title toc-ignore">R four ways (plus a few)</h1>
 <h4 class="author"><em><div style="white-space: pre-line;">Robert McDonald
 Kellogg School, Northwestern University</div></em></h4>
-<h4 class="date"><em>2017-10-26</em></h4>
+<h4 class="date"><em>2017-10-28</em></h4>
 
 </div>
 
@@ -167,7 +167,10 @@ AK,F,1910,Elsie,6</code></pre>
 <li>Count the number of distinct names in the data</li>
 <li>Create a new CSV file that contains the top 10 names, by sex, for each year.</li>
 </ol>
-<p>We will use Base R with and without loops, <code>dplyr</code>, and <code>data.table</code></p>
+<ul>
+<li>We will use Base R with and without loops, <code>dplyr</code>, and <code>data.table</code></li>
+<li>The challenge is finding the right level of abstraction for a given problem</li>
+</ul>
 </div>
 <div id="r-base-r" class="section level2">
 <h2>R: Base R</h2>
@@ -177,8 +180,11 @@ AK,F,1910,Elsie,6</code></pre>
 <li>Don’t be afraid of loops, and don’t be in love with them</li>
 </ul>
 </div>
-<div id="using-loops" class="section level2">
-<h2>Using loops</h2>
+<div id="using-only-loops" class="section level2">
+<h2>Using only loops</h2>
+<ul>
+<li>The following is <em>very</em> slow. Experienced R users will wince at the code.</li>
+</ul>
 
 <pre class="r"><code>x = read.csv('data/allstates.TXT', header=FALSE,
              stringsAsFactors=FALSE)
@@ -186,16 +192,23 @@ names(x) &lt;- c('state', 'sex', 'year', 'name', 'n')
 print(length(table(x$state))) 
 print(length(table(x$year)))
 print(length(table(x$name)))
-xa &lt;- aggregate(n ~ year + sex + name, data=x, FUN=sum)
-xa &lt;- xa[order(xa$year, xa$sex, -xa$n), ]
-top10 &lt;- data.frame()
-for (i in unique(xa$year)) {
-  for (j in unique(xa$sex)) {
-    tmp = head(subset(xa, xa$year == i &amp; xa$sex == j), n=10)
-    top10 &lt;- rbind(top10, tmp, make.row.names=FALSE)
-  }
+top10 &lt;- list()
+sexes &lt;- unique(x$sex)
+for (i in unique(x$year)) {
+    for (j in sexes) {
+        tmp &lt;- x[x$year == i &amp; x$sex == j, ]
+        names &lt;- unique(tmp$name)
+        lnames &lt;- length(names)
+        nvec &lt;- vector(length=lnames)
+        for (k in 1:lnames) {
+            nvec[k] &lt;- sum(tmp$n[tmp$name == names[k]])
+        }
+        tmp &lt;- data.frame(year=i, sex=j, name=names, n=nvec)
+        tmp &lt;- tmp[order(-tmp$n), ]
+        top10 &lt;- rbind(top10, head(tmp, n=10), make.row.names=FALSE)
+    }
 }
-write.csv(top10, file='data/babynames10Rbase_loop.csv',
+write.csv(top10, file='data/babynames10Rbase_loop2.csv',
           row.names=FALSE)
 print(head(top10))</code></pre>
 
@@ -214,14 +227,58 @@ print(head(top10))</code></pre>
 5 1910   F     Ruth  7209
 6 1910   F     Anna  6433
    user  system elapsed 
- 31.008   0.824  31.840 </code></pre>
+121.648   0.960 122.629 </code></pre>
+
+</div>
+<div id="r-with-some-loops" class="section level2">
+<h2>R with some loops</h2>
+
+<pre class="r"><code>x = read.csv('data/allstates.TXT', header=FALSE,
+             stringsAsFactors=FALSE)
+names(x) &lt;- c('state', 'sex', 'year', 'name', 'n')
+print(length(table(x$state))) 
+print(length(table(x$year)))
+print(length(table(x$name)))
+xa &lt;- aggregate(n ~ year + sex + name, data=x, FUN=sum)
+xa &lt;- xa[order(xa$year, xa$sex, -xa$n), ]
+top10 &lt;- data.frame()
+for (i in unique(xa$year)) {
+    for (j in unique(xa$sex)) {
+        tmp = head(subset(xa, xa$year == i &amp; xa$sex == j), n=10)
+        top10 &lt;- rbind(top10, tmp, make.row.names=FALSE)
+  }
+}
+write.csv(top10, file='data/babynames10Rbase_loop.csv',
+          row.names=FALSE)
+print(head(top10))
+</code></pre>
+
+</div>
+<div id="results-r-with-some-loops" class="section level2">
+<h2>Results: R with some loops</h2>
+<ul>
+<li>Better, but still clunky</li>
+</ul>
+
+<pre><code>[1] 51
+[1] 107
+[1] 31014
+  year sex     name     n
+1 1910   F     Mary 22848
+2 1910   F    Helen 10479
+3 1910   F Margaret  8222
+4 1910   F  Dorothy  7314
+5 1910   F     Ruth  7209
+6 1910   F     Anna  6433
+   user  system elapsed 
+ 27.780   0.540  28.327 </code></pre>
 
 </div>
 <div id="without-explicit-loops" class="section level2">
 <h2>Without explicit loops</h2>
 <ul>
-<li>Loops can generally be avoided.</li>
-<li>This may be less transparent than the code with loops however…</li>
+<li>Avoiding loops leads to cleaner, more “R-ish” code.</li>
+<li>Some may find this less transparent and it is faster, but not by much.</li>
 </ul>
 
 <pre class="r"><code>x = read.csv('data/allstates.TXT', header=FALSE,
@@ -253,7 +310,7 @@ print(head(top10))</code></pre>
 498889 1910   F     Ruth  7209
 37086  1910   F     Anna  6433
    user  system elapsed 
- 25.752   0.444  26.248 </code></pre>
+ 23.272   0.152  23.431 </code></pre>
 
 
 </div>
@@ -267,7 +324,7 @@ print(head(top10))</code></pre>
 <pre class="r"><code>system.time(x &lt;- read.csv('data/allstates.TXT',
                           header=FALSE))
    user  system elapsed 
-  7.168   0.192   7.362 
+  6.444   0.048   6.494 
 system.time(
     x &lt;- read_csv('data/allstates.TXT',
                   progress=FALSE,
@@ -276,7 +333,7 @@ system.time(
                   )
 )
    user  system elapsed 
-  2.356   0.040   2.407 </code></pre>
+  2.124   0.012   2.144 </code></pre>
 
 </div>
 <div id="what-about-saving-and-reading-in-r-format" class="section level2">
@@ -288,17 +345,17 @@ system.time(
 
 <pre class="r"><code>system.time(save(x, file='/tmp/save.Rdata'))
    user  system elapsed 
-  7.872   0.184   8.075 
+  6.452   0.004   6.462 
 system.time(save(x, file='/tmp/save2.Rdata', compress=FALSE))
    user  system elapsed 
-  1.784   0.192   2.059 
+  1.844   0.164   2.105 
 system.time(saveRDS(x, file='/tmp/save.RDS', compress=FALSE))
    user  system elapsed 
-  1.756   0.140   1.985 
+  1.872   0.144   2.115 
 cat(system('ls -al /tmp/save*', intern=TRUE), sep='\n')
--rw-rw-r-- 1 rmcd rmcd 238673928 Oct 26 10:53 /tmp/save2.Rdata
--rw-rw-r-- 1 rmcd rmcd  17278554 Oct 26 10:53 /tmp/save.Rdata
--rw-rw-r-- 1 rmcd rmcd 238673902 Oct 26 10:53 /tmp/save.RDS</code></pre>
+-rw-rw-r-- 1 rmcd rmcd 238673928 Oct 27 16:58 /tmp/save2.Rdata
+-rw-rw-r-- 1 rmcd rmcd  17278554 Oct 27 16:58 /tmp/save.Rdata
+-rw-rw-r-- 1 rmcd rmcd 238673902 Oct 27 16:58 /tmp/save.RDS</code></pre>
 
 </div>
 <div id="reading-the-files-back-in" class="section level2">
@@ -306,13 +363,13 @@ cat(system('ls -al /tmp/save*', intern=TRUE), sep='\n')
 
 <pre class="r"><code>system.time(load('/tmp/save.Rdata'))
    user  system elapsed 
-  3.712   0.028   3.739 
+  3.912   0.024   3.938 
 system.time(load('/tmp/save2.Rdata'))
    user  system elapsed 
-  2.492   0.116   2.608 
+  2.756   0.028   2.785 
 system.time(y &lt;- readRDS(file='/tmp/save.RDS'))
    user  system elapsed 
-  2.540   0.072   2.613 </code></pre>
+  2.940   0.068   3.009 </code></pre>
 
 <ul>
 <li>The actual relative times depend on both CPU speed and disk speed</li>
@@ -321,11 +378,10 @@ system.time(y &lt;- readRDS(file='/tmp/save.RDS'))
 <div id="dplyr" class="section level2">
 <h2>R: <code>dplyr</code></h2>
 <ul>
-<li>Manipulate data with echoes of SQL</li>
+<li>Manipulate data with echoes of SQL. The code focuses on the task</li>
 </ul>
 
-<pre class="r"><code>system.time({
-x &lt;- read_csv('data/allstates.TXT',
+<pre class="r"><code>x &lt;- read_csv('data/allstates.TXT',
              col_names=c('state', 'sex', 'year', 'name', 'n'),
              col_types = cols(sex = col_character())
              )
@@ -335,11 +391,11 @@ print(nrow(distinct(x, name)))
 out = x %&gt;% 
   group_by(year, sex, name) %&gt;% 
   summarize(n = sum(n)) %&gt;% 
-  filter(row_number(desc(n)) &lt;= 10) %&gt;% 
-  arrange(year, sex, desc(n))
+  arrange(year, sex, desc(n)) %&gt;%
+  filter(row_number(desc(n)) &lt;= 10)
+##  do(head(., n=10))  ## works in place of filter
 write_csv(out, path='data/babynames10Rdplyr.csv')
-print(head(out))
-})</code></pre>
+print(head(out))</code></pre>
 
 </div>
 <div id="results-dplyr" class="section level2">
@@ -359,7 +415,7 @@ print(head(out))
 5  1910     F     Ruth  7209
 6  1910     F     Anna  6433
    user  system elapsed 
-  6.540   0.012   6.551 </code></pre>
+  6.892   0.080   6.981 </code></pre>
 
 
 </div>
@@ -406,7 +462,7 @@ print(head(out))</code></pre>
 <h2>Creating an SQL Connection</h2>
 <ul>
 <li>It is also possible to use dplyr with an SQL connection</li>
-<li>SQL database usually have their own passwords
+<li>SQL databases usually have their own passwords
 <ul>
 <li>Password security becomes an issue when creating scripts. Two solutions are the <code>keyringr</code> package, which reads your local keyring, and the <code>getPass</code> package, which will prompt you for the password when making a connection.)</li>
 </ul></li>
@@ -458,7 +514,7 @@ print(head(tmp))</code></pre>
 5  1910     F     Ruth  7209
 6  1910     F     Anna  6433
    user  system elapsed 
-  0.196   0.000  23.083 </code></pre>
+  0.224   0.000  23.844 </code></pre>
 
 </div>
 <div id="the-dplyr-query" class="section level2">
@@ -596,7 +652,12 @@ cut -d, -f4 data/allstates.TXT | uniq | sort | uniq | wc -l
 <ul>
 <li>Use <code>dplyr</code> or <code>data.table</code> (especially for large data)</li>
 <li>For large files, save uncompressed</li>
-<li>Learn the command line</li>
+<li>Some loops are okay, but using loops for everything kills performance and takes too much time to code</li>
+<li>Learn to use the command line
+<ul>
+<li>If you are using Linux or OS X, you have what you need</li>
+<li>If you are using Windows, you will need to install either <a href="https://git-for-windows.github.io/">git-bash</a> or the <a href="https://msdn.microsoft.com/en-us/commandline/wsl/install_guide">Linux Subsystem for Windows</a> (only for Windows 10)</li>
+</ul></li>
 </ul>
 </div>
 
