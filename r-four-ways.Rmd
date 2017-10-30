@@ -8,6 +8,8 @@ output:
   html_document: default
   beamer_presentation:
     slide_level: 2
+    includes:
+      in_header: header-pageno.tex
 toc: false
 urlcolor: 'magenta'
 ---
