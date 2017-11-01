@@ -15,10 +15,11 @@ This repository will store items useful in teaching R.
 	  
 * Rnw_vs_Rmd: These file both implement the same equation, table,
   figure, and bibliographic references in Rnw (LaTeX plus R code) and
-  Rmd (markdown plus R code) formats.
-  * [Rnw_vs_Rmd-Rnw.pdf](Rnw_vs_Rmd-Rnw.pdf) is the pdf produced from
+  Rmd (markdown plus R code) formats. There are formatting differences, but 
+  on the whole the two are quite similar.`
+  * [`Rnw_vs_Rmd-Rnw.Rnw`](Rnw_vs_Rmd-Rnw.pdf) is the pdf produced from
     the  Rnw file
-  * [Rnw_vs_Rmd-Rmd.pdf](Rnw_vs_Rmd-Rnw.pdf) is the pdf produced from
+  * [`Rnw_vs_Rmd-Rmd.Rmd`](Rnw_vs_Rmd-Rmd.pdf) is the pdf produced from
     the  Rmd file
   
   
