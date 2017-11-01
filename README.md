@@ -12,5 +12,13 @@ This repository will store items useful in teaching R.
   different methods of accomplishing the same calculations. (The file
   contains examples of accessing a password-protected PostgreSQL
 	  server. The username and password are not public.)
+	  
+* Rnw_vs_Rmd: These file both implement the same equation, table,
+  figure, and bibliographic references in Rnw (LaTeX plus R code) and
+  Rmd (markdown plus R code) formats.
+  * [Rnw_vs_Rmd-Rnw.pdf](Rnw_vs_Rmd-Rnw.pdf) is the pdf produced from
+    the  Rnw file
+  * [Rnw_vs_Rmd-Rmd.pdf](Rnw_vs_Rmd-Rnw.pdf) is the pdf produced from
+    the  Rmd file
   
   

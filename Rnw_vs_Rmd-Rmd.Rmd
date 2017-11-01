@@ -1,0 +1,137 @@
+---
+title: Comparing Rnw to Rmd
+subtitle: An example
+author: 
+- Robert McDonald\thanks{Kellogg School of Management, Northwestern University}
+- Joe Smith\thanks{Somewhereelse University}
+bibliography: refs.bib
+latex-engine: xelatex
+thanks: Kellogg School of Management, Northwestern University 
+abstract: "It's possible to create a document using either 
+\\LaTeX\ \ coupled with R code, or using Rmarkdown coupled with R code. 
+How hard is it to do one vs the other? This is the Rmarkdown version."
+output: 
+  pdf_document:
+    number_sections: true
+geometry: margin=1.4in
+fontsize: 12pt
+toc: true
+colorlinks: true
+linkcolor: 'red'
+toccolor: 'cyan'
+linktocpages: true
+number_sections: true
+header-includes: 
+   - \usepackage{titletoc}
+   - \usepackage{appendix}
+---
+
+\thispagestyle{empty}
+
+\newpage
+
+```{r init, echo=FALSE, message=FALSE}
+library(tidyverse)
+library(babynames)
+library(knitr)
+library(kableExtra)
+opts_chunk$set(message=FALSE,
+               comment=NA)
+names <- c('Mary', 'James')
+```
+
+# Introduction 
+
+This is a test document to illustrate the difference between Rmd and 
+Rnw files. 
+
+## Auto-references and equations
+
+It is possible to include equations (such as \autoref{eq:test}  below)
+and references (such as to @grolemund/wickham:17 or @schmuller:17)
+
+\begin{equation}
+\alpha + \beta/\Delta + \int_0^\infty f(x) dx
+\label{eq:test}
+\end{equation}
+
+
+# Babynames 
+
+## Top 10 names historically
+
+\autoref{tbl:top10} shows the top names historically, from 1880 to 2015.
+
+```{r toptable, echo=FALSE}
+topnames <- babynames %>%
+    group_by(name) %>%
+    summarize(Total=sum(n)) %>%
+    arrange(-Total) %>%
+    filter(row_number() <= 10)
+
+tbl <- left_join(topnames, babynames) %>% 
+    group_by(name, Total) %>%
+    summarize('Year most popular'=as.character(year[which.max(prop)]),
+              'Proportion that year'=max(prop)) %>%
+    arrange(-Total) %>%
+    rename(Name=name) %>%
+    kable(caption='Top 10 names, 1880-2015\\label{tbl:top10}',
+          digits=4,
+          format.args=list(big.mark=','),
+          align='lccc'
+          ) 
+kable_styling(tbl, "latex")
+          
+```
+
+## Popularity of `r paste(names, collapse=' and ')`
+
+\autoref{fig:babyfig} shows the popularity of the names `r#
+paste(names, collapse=' and ')` over `r#
+length(unique(babynames$year))` years. The placement of the figure is
+tricky. Latex permits the placement options "hptb". When placing the
+figure, knitr has to decide whether to write a figure environment or a
+markdown figure specification (`![]()`). The way to force a figure
+environment (from [this post on
+stackoverflow](https://stackoverflow.com/questions/42486617/knitr-ignoring-fig-pos))
+is to use a figure caption and at least one of fig.align, out.width,
+or out.extra. It works to use `out.extra=''`, which is what I do
+below.
+
+
+```{r babyfig, message=FALSE, echo=FALSE, fig.cap='Popularity of James and Elizabeth from 1880 to 2015\\label{fig:babyfig}', fig.height=4, out.extra='', fig.pos='p'}
+babynames %>%
+    filter(name %in% c('James', 'Mary')) %>%
+    ggplot(aes(x=year, y=prop, color=sex)) +
+    geom_point() +
+    facet_wrap( ~ name, scales='fixed') + theme_bw()
+```
+
+\newpage
+
+\appendixpage
+\appendix
+
+# Code
+
+## Table code
+
+Here is the code used to produce \autoref{tbl:top10}:
+
+```{r, eval=FALSE}
+<<toptable>>
+```
+
+## Figure code
+
+Here is the code used to produce \autoref{fig:babyfig}:
+
+```{r, eval=FALSE}
+<<init>>
+<<babyfig>>
+```
+
+
+\newpage
+
+# References

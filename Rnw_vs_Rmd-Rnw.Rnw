@@ -1,0 +1,142 @@
+\documentclass[12pt,notitlepage]{article}
+\usepackage{titletoc}
+\usepackage{appendix}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage[colorlinks=true,
+           linkcolor=cyan,
+           citecolor=red
+           ]{hyperref}
+
+
+
+\title{Comparing Rnw to Rmd\\An example}
+\author{Robert
+  McDonald\thanks{Kellogg School of Management, Northwestern
+    University} \and Joe Smith\thanks{Somewhereelse University}}
+
+
+%number_sections: true fontsize: 12pt toc: true colorlinks: true
+%5linkcolor: 'red' toccolor: 'cyan' linktocpages: true
+
+\begin{document}
+\maketitle
+\begin{abstract}
+ It's possible to create
+a document using either \LaTeX\ coupled with R code, or using
+Rmarkdown coupled with R code.  How hard is it to do one vs the other?
+This is the Rmarkdown version.
+\end{abstract}
+\tableofcontents
+
+\thispagestyle{empty}
+
+\newpage
+
+<<init, echo=FALSE, message=FALSE>>=
+library(tidyverse)
+library(babynames)
+library(knitr)
+library(kableExtra)
+opts_chunk$set(message=FALSE,
+               comment=NA)
+names <- c('Mary', 'James')
+@
+
+\section{Introduction}
+
+This is a test document to illustrate the difference between Rmd and 
+Rnw files. 
+
+\subsection{Auto-references and equations}
+
+It is possible to include equations (such as equation (\ref{eq:test})  below)
+and references (such as to \cite{grolemund/wickham:17} or \cite{schmuller:17})
+
+\begin{equation}
+\alpha + \beta/\Delta + \int_0^\infty f(x) dx
+\label{eq:test}
+\end{equation}
+
+
+<<toptable, echo=FALSE, results='asis'>>=
+topnames <- babynames %>%
+    group_by(name) %>%
+    summarize(Total=sum(n)) %>%
+    arrange(-Total) %>%
+    filter(row_number() <= 10)
+
+tbl <- left_join(topnames, babynames) %>% 
+    group_by(name, Total) %>%
+    summarize('Year most popular'=as.character(year[which.max(prop)]),
+              'Proportion that year'=max(prop)) %>%
+    arrange(-Total) %>%
+    rename(Name=name) %>%
+    kable("latex",
+          caption='Top 10 names, 1880-2015\\label{tbl:top10}',
+          digits=4,
+          format.args=list(big.mark=','),
+          align='lccc',
+          booktabs=TRUE
+          ) 
+print(tbl)
+#kable_styling(tbl, "latex", booktabs=TRUE)
+@           
+
+
+
+\subsection{Popularity of \Sexpr{paste(names, collapse=' and ')}}
+
+
+Figure \ref{fig:babyfig} shows the popularity of the names %
+\Sexpr{paste(names, collapse=' and ')} over %
+\Sexpr{length(unique(babynames$year))} years. The placement of the figure
+is tricky. Latex permits the placement options "hptb". When placing
+the figure, knitr has to decide whether to write a figure environment
+or a markdown figure specification (![]()). The way to force a
+figure environment (from \href{this post on
+stackoverflow}{https://stackoverflow.com/questions/42486617/knitr-ignoring-fig-pos})
+is to use a figure caption and at least one of fig.align, out.width,
+or out.extra. It works to use \verb|out.extra=''|, which is what I do
+below.
+
+
+<<babyfig, message=FALSE, echo=FALSE, fig.cap='Popularity of James and Elizabeth from 1880 to 2015\\label{fig:babyfig}', fig.height=4, out.extra='', fig.pos='p'>>=
+babynames %>%
+    filter(name %in% c('James', 'Mary')) %>%
+    ggplot(aes(x=year, y=prop, color=sex)) +
+    geom_point() +
+    facet_wrap( ~ name, scales='fixed') + theme_bw()
+@
+
+\newpage
+
+\appendixpage
+\appendix
+
+\section{Code}
+
+\subsection{Table code}
+
+<<eval=FALSE>>=
+<<toptable>>
+@ 
+
+\subsection{Figure code}
+
+Here is the code used to produce Figure \ref{fig:babyfig}:
+
+<<eval=FALSE, comment=NA>>=
+<<init>>
+<<babyfig>>
+@ 
+
+
+\newpage
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}
+
