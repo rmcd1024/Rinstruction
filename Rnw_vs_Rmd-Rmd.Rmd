@@ -3,7 +3,8 @@ title: Comparing Rnw to Rmd
 subtitle: An example
 author: 
 - Robert McDonald\thanks{Kellogg School of Management, Northwestern University}
-- Joe Smith\thanks{Somewhereelse University}
+- Joe Smith\thanks{Someother University}
+date: "`r format(Sys.Date(), '%B %e, %Y')`"
 bibliography: refs.bib
 latex-engine: xelatex
 thanks: Kellogg School of Management, Northwestern University 
@@ -96,10 +97,10 @@ environment (from [this post on
 stackoverflow](https://stackoverflow.com/questions/42486617/knitr-ignoring-fig-pos))
 is to use a figure caption and at least one of fig.align, out.width,
 or out.extra. It works to use `out.extra=''`, which is what I do
-below.
+in this document.
 
 
-```{r babyfig, message=FALSE, echo=FALSE, fig.cap='Popularity of James and Elizabeth from 1880 to 2015\\label{fig:babyfig}', fig.height=4, out.extra='', fig.pos='p'}
+```{r babyfig, message=FALSE, echo=FALSE, fig.cap='Popularity of James and Mary from 1880 to 2015\\label{fig:babyfig}', fig.height=4, out.extra='', fig.pos='p'}
 babynames %>%
     filter(name %in% c('James', 'Mary')) %>%
     ggplot(aes(x=year, y=prop, color=sex)) +

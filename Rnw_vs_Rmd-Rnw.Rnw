@@ -4,6 +4,7 @@
 \usepackage{natbib}
 \usepackage{amsmath}
 \usepackage{booktabs}
+\usepackage[nottoc]{tocbibind}
 \usepackage[colorlinks=true,
            linkcolor=cyan,
            citecolor=red
@@ -14,7 +15,7 @@
 \title{Comparing Rnw to Rmd\\An example}
 \author{Robert
   McDonald\thanks{Kellogg School of Management, Northwestern
-    University} \and Joe Smith\thanks{Somewhereelse University}}
+    University} \and Joe Smith\thanks{Someother University}}
 
 
 %number_sections: true fontsize: 12pt toc: true colorlinks: true
@@ -59,6 +60,11 @@ and references (such as to \cite{grolemund/wickham:17} or \cite{schmuller:17})
 \label{eq:test}
 \end{equation}
 
+\section{Babynames}
+
+\subsection{Top 10 names historically}
+
+Table \ref{tbl:top10} shows the top names historically, from 1880 to 2015.
 
 <<toptable, echo=FALSE, results='asis'>>=
 topnames <- babynames %>%
@@ -81,7 +87,6 @@ tbl <- left_join(topnames, babynames) %>%
           booktabs=TRUE
           ) 
 print(tbl)
-#kable_styling(tbl, "latex", booktabs=TRUE)
 @           
 
 
@@ -101,7 +106,7 @@ is to use a figure caption and at least one of fig.align, out.width,
 or out.extra. It works to use \verb|out.extra=''|, which is what I do
 below.
 
-
+  
 <<babyfig, message=FALSE, echo=FALSE, fig.cap='Popularity of James and Elizabeth from 1880 to 2015\\label{fig:babyfig}', fig.height=4, out.extra='', fig.pos='p'>>=
 babynames %>%
     filter(name %in% c('James', 'Mary')) %>%
@@ -135,7 +140,7 @@ Here is the code used to produce Figure \ref{fig:babyfig}:
 
 \newpage
 
-\bibliographystyle{plainnat}
+\bibliographystyle{chicago}
 \bibliography{refs}
 
 \end{document}
