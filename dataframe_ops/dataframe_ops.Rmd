@@ -1,7 +1,7 @@
 ---
 title: Data frame operations
 author: Robert McDonald
-bibliography: refs.bib
+bibliography: ../refs.bib
 ---
 
 
