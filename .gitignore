@@ -7,4 +7,5 @@ data/*.csv
 *bbl
 *synctex*
 *log
+*.tex
 

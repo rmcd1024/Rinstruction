@@ -10,8 +10,11 @@ output:
     slide_level: 2
     includes:
       in_header: header-pageno.tex
-toc: false
-urlcolor: 'magenta'
+toc: true
+urlcolor: 'cyan'
+## following is workaround for pdfpages/xcolor package clash
+documentclass: beamer
+classoption: xcolor=dvipsnames
 ---
 
 ```{r setup, include=FALSE}
@@ -37,20 +40,19 @@ library(DBI)
 library(RPostgreSQL)
 ```
 
-## Introduction 
+## The babynames data
 
 * The Social Security Administration provides [state-level babynames
 data](https://www.ssa.gov/oact/babynames/state/namesbystate.zip)
 annually since 1910.
 
-* Create  a single file containing all 
-state-level babyname data with the shell command 
+* One shell command creates  a single file containing all 
+state-level babyname data
 ```
 cat *.TXT > allstates.TXT
 ```
 
-* The resulting file has 5.8 million rows and no
-header. 
+* The resulting file has 5.8 million rows and no header.
 
 ## File contents
 
@@ -78,21 +80,28 @@ The fields (i.e., columns) are:
 1. Count the number of distinct states in the data
 2. Count the number of distinct years in the data
 2. Count the number of distinct names in the data
-1. Create a new CSV file that contains the top 10 names, by sex, for
-each year.
+1. Create a new CSV file that contains the top 10 names nationally, by
+sex, for each year.
 
 * We will use Base R with and without loops, `dplyr`, and `data.table`
-* The challenge is finding the right level of abstraction for a given problem
+* We will find that `dplyr` is faster than base R, and `data.table` is
+  faster still
+
+# Base R
 
 ## R: Base R
 
-* Natural instinct for this problem is to write a loop. 
-* Apart from speed, we will see that this is relatively clumsy.
-* Don't be afraid of loops, and don't be in love with them
+* Many argue that looping in  R is always slow
+* Beginning users often want to write loops
+* In this problem, there are loops with few iterations (over states and
+  sex) and many iterations (over names)
+* There is a big gain to replacing the `name` loop, not so much of a
+  gain from replacing the other loops
+
 
 ## Using only loops
 
-* The following is *very* slow. Experienced R users will wince at the code.
+* The following code is *very* slow. Experienced R users will wince...
 
 
 \tiny
@@ -142,6 +151,23 @@ system.time({
 
 ## R with some loops
 
+* We can use the `aggregate` function to replace the innermost loop,
+  which sums individual names across states for a given year and sex
+* Using `aggregate` we apply the function `sum` to the formula `n ~
+  year + sex + name`
+
+\footnotesize
+
+```{r, eval=FALSE}
+xa <- aggregate(n ~ year + sex + name, data=x, FUN=sum)
+```
+
+\normalsize
+
+* This is substantially faster
+
+## R with some loops
+
 
 \footnotesize
 
@@ -173,7 +199,6 @@ print(head(top10))
 
 ## Results: R with some loops
 
-* Better, but still clunky
 
 \footnotesize
 
@@ -187,9 +212,9 @@ system.time({
 
 ## Without explicit loops
 
-* Avoiding loops leads to cleaner, more "R-ish" code.
-* Some may find this less transparent and it is faster, but not by
-  much.
+* Using `by` to replace the year/sex loops leads to cleaner, more
+  "R-ish" code.
+* Perhaps less transparent? It is only slightly faster
 
 \footnotesize
 
@@ -222,69 +247,21 @@ system.time({
 })
 ```
 
-\normalsize
-
-\newpage
-
-## Aside: `read.csv` vs `read_csv` {#r-csv-speed}
-
-
-* How fast are the different functions for reading csv files?. 
-* Note that `read_csv` without column types will throw an error
-because it tries to treat `sex` as logical (please no jokes...)
-
-\footnotesize
-
-```{r}
-system.time(x <- read.csv('data/allstates.TXT',
-                          header=FALSE))
-system.time(
-    x <- read_csv('data/allstates.TXT',
-                  progress=FALSE,
-                  col_names=c('state', 'sex', 'year', 'name', 'n'),
-                  col_types = cols(sex = col_character())
-                  )
-)
-
-```
+# `dplyr`
 
 \normalsize
 
-## What about saving and reading in R format?
+## The `dplyr` approach
 
-* Contrast `save` and `load` with `saveRDS(compress=FALSE)` and
-  `readRDS`
-* Saving first; compression slows things down a lot
+* The `dplyr` package permits manipulation data with echoes of
+  SQL. 
+* There are explicit "verbs" for data manipulation tasks (sorting,
+  filtering by row, selecting columns, grouping, summarizing, etc.)
+* `dplyr` is very fast to code
+* Compare the `dplyr` code to the "no-loop" base R code
 
+## `dplyr` and `tidy` {#dplyr}
 
-\footnotesize
-   
-```{r time_write}
-system.time(save(x, file='/tmp/save.Rdata'))
-system.time(save(x, file='/tmp/save2.Rdata', compress=FALSE))
-system.time(saveRDS(x, file='/tmp/save.RDS', compress=FALSE))
-cat(system('ls -al /tmp/save*', intern=TRUE), sep='\n')
-```
-
-\normalsize
-
-## Reading the files back in
-
-\footnotesize
-
-```{r time_read}
-system.time(load('/tmp/save.Rdata'))
-system.time(load('/tmp/save2.Rdata'))
-system.time(y <- readRDS(file='/tmp/save.RDS'))
-```
-
-\normalsize
-
-* The actual relative times depend on both CPU speed and disk speed
-
-## R: `dplyr` {#dplyr}
-
-* Manipulate data with echoes of SQL. The code focuses on the task
 
 \footnotesize
 
@@ -300,7 +277,7 @@ out = x %>%
   group_by(year, sex, name) %>% 
   summarize(n = sum(n)) %>% 
   arrange(year, sex, desc(n)) %>%
-  filter(row_number(desc(n)) <= 10)
+  filter(row_number(desc(n)) <= 10) 
 ##  do(head(., n=10))  ## works in place of filter
 write_csv(out, path='data/babynames10Rdplyr.csv')
 print(head(out))
@@ -320,10 +297,51 @@ system.time({
 
 \normalsize
 
+\newpage
+
+## R: `dplyr` with `map` {#dplyr_map}
+
+* The `purrr` functions `nest` and `map` can also be used.
+
+\footnotesize
+
+```{r soln_dplyr_map, eval=FALSE}
+x <- read_csv('data/allstates.TXT',
+             col_names=c('state', 'sex', 'year', 'name', 'n'),
+             col_types = cols(sex = col_character())
+             )
+print(nrow(distinct(x, state)))
+print(nrow(distinct(x, year)))
+print(nrow(distinct(x, name)))
+out = x %>% 
+  group_by(year, sex, name) %>% 
+  summarize(n = sum(n)) %>% 
+  arrange(year, sex, desc(n)) %>%
+  nest() %>%  ## will nest on the grouping variables
+  map_df(.x=.$data, .f=head, n=10)
+write_csv(out, path='data/babynames10Rdplyrmap.csv')
+print(head(out))
+```
+
+\normalsize
+
+## Results: `dplyr` with `map`
+
+\footnotesize
+
+```{r soln_dplyr_map_time, eval=TRUE, echo=FALSE}
+system.time({
+<<soln_dplyr_map>>
+})
+```
+
+\normalsize
+
+# The `data.table` package
 
 \newpage
 
-## R: `data.table`
+## `data.table`
 
 * `data.table` is designed explicitly for manipulation of large data
 sets.  The syntax is more abstract than in `dplyr`
@@ -361,12 +379,103 @@ system.time({
 
 \normalsize
 
+# Reading and writing data files
+
+
+\newpage
+
+## `read.csv` vs `read_csv` vs `fread` {#r-csv-speed}
+
+* In each comparison we have used the "native" function for reading
+  and writing in that particular environment
+* `read.csv` and `write.csv` are in  base R
+* `read_csv` and `write_csv` are in `dplyr`
+* `fread` and `fwrite` are in `data.table`
+
+## Comparison: Reading
+
+* Note that `read_csv` without column types will throw an error
+because it infers that the variable `sex` is logical
+
+\tiny
+
+```{r}
+system.time(x <- read.csv('data/allstates.TXT',
+                          header=FALSE))
+system.time(
+    x <- read_csv('data/allstates.TXT',
+                  progress=FALSE,
+                  col_names=c('state', 'sex', 'year', 'name', 'n'),
+                  col_types = cols(sex = col_character())
+                  )
+)
+system.time(x <- fread("data/allstates.TXT",
+                       col.names=c('state', 'sex', 'year', 'name', 'n'))
+            )
+
+```
+
+\normalsize
+
+## Writing files
+
+* We can choose
+
+	1. Writing CSV or Rdata files
+	2. If Rdata: Writing compressed or uncompressed
+	3. If CSV: Using one of three functions
+  
+
+## Comparison: Writing
+
+
+\tiny
+   
+```{r time_write}
+system.time(write.csv(x, file='/tmp/save1.CSV'))
+system.time(write_csv(x, path='/tmp/save2.CSV'))
+system.time(fwrite(x, file='/tmp/save3.CSV'))
+system.time(save(x, file='/tmp/save.Rdata'))
+system.time(save(x, file='/tmp/save2.Rdata', compress=FALSE))
+system.time(saveRDS(x, file='/tmp/save.RDS', compress=FALSE))
+cat(system('ls -al /tmp/save*', intern=TRUE), sep='\n')
+```
+
+\normalsize
+
+## Reading the Rdata files back in
+
+\footnotesize
+
+```{r time_read}
+system.time(load('/tmp/save.Rdata'))
+system.time(load('/tmp/save2.Rdata'))
+system.time(y <- readRDS(file='/tmp/save.RDS'))
+```
+
+\normalsize
+
+* The relative times depend on both CPU and disk speeds
+
+## Conclusion about reading and writing
+
+* Use `fread` and `fwrite` if the file is not small
+* When writing R files, do not use compression (the default) 
+* In the previous examples:
+	* differences in file *reading* speed would have been substantial
+	* differences in file *writing* speed would have been small,
+    because the output file was small
+* `dplyr` using `fread` and `fwrite` runs in under 5 seconds
+
+# SQL
+
+
 \newpage
 	
 ## Creating an SQL Connection
 
-* It is also possible to use dplyr with an SQL connection
-* SQL databases usually have their own passwords
+* It is possible to use dplyr with an SQL connection
+* SQL databases have their own passwords
 	* Password security becomes an issue when creating scripts. Two
 solutions are the `keyringr` package, which reads your local keyring,
 and the `getPass` package, which will prompt you for the password when
@@ -379,33 +488,34 @@ conn = DBI::dbConnect(RPostgreSQL::PostgreSQL(),
                       user=username,
                       password=pw, 
                       dbname='babynames_by_state',
-                      host='localhost')
+                      host='localhost'
+                      )
 ```
 \normalsize
 
 
-
 \newpage
+
+
 
 ## R, using a connection to an SQL database
 
 * A database connection can be used with either SQL or R. 
-* This shows that the same `dplyr` code as before works the remote
-database 
+* `dplyr` code works with the remote database
 
 \footnotesize
 
 ```{r dplyr_sql, echo=TRUE, eval=FALSE, comment=FALSE}
 names.tbl <- tbl(conn, 'names')
-names.tbl %>% select(state) %>% distinct %>% count
-names.tbl %>% select(year) %>% distinct %>% count
-names.tbl %>% select(name) %>% distinct %>% count
+distinct(names.tbl, state) %>% count 
+distinct(names.tbl, year)  %>% count 
+distinct(names.tbl, name) %>% count 
 tmp <- names.tbl %>% 
     group_by(year, sex, name) %>%
     summarize(total=sum(n)) %>% 
     arrange(year, sex, -total) %>% 
     filter(row_number() <= 10)
-print(head(tmp))
+print(head(collect(tmp)))
 ```
 
 \normalsize
@@ -432,7 +542,7 @@ system.time({
 
 \tiny
 
-```{r, message=TRUE, eval=evalsql}
+```{r showquery, message=TRUE, eval=evalsql}
 show_query(tmp)
 ```
 
@@ -446,15 +556,15 @@ show_query(tmp)
 
 \scriptsize
 
-```{sql, connection=conn, eval=evalsql}
+```{sql state, connection=conn, eval=evalsql}
 select count(distinct state) from names;
 ```
 
-```{sql, connection=conn, eval=evalsql}
+```{sql year, connection=conn, eval=evalsql}
 select count(distinct year) from names;
 ```
 
-```{sql, connection=conn, eval=evalsql}
+```{sql names, connection=conn, eval=evalsql}
 select count(distinct name) from names;
 ```
 
@@ -510,6 +620,8 @@ dbDisconnect(conn)
 
 \newpage
 
+# Command line
+
 ## Command line
 
 *  You can use the command line to do some of this.
@@ -538,6 +650,7 @@ cut -d, -f4 data/allstates.TXT | uniq | sort | uniq | wc -l
 
 * Use `dplyr` or `data.table` (especially for large data)
 * For large files, save uncompressed
+* For CSV files, `data.table::fread` and `data.table::fwrite` are outstanding
 * Some loops are okay, but using loops for everything kills
   performance and takes too much time to code
 * Learn to use the command line
