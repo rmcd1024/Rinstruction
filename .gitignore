@@ -2,10 +2,12 @@
 allstates.TXT
 *cache
 password.Rdata
-data/*.csv
+*data/*.csv
 *concordance*
 *bbl
 *synctex*
 *log
 *.tex
+*.csv
+*.CSV
 

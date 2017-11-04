@@ -13,7 +13,7 @@ This repository will store items useful in teaching R.
   contains examples of accessing a password-protected PostgreSQL
 	  server. The username and password are not public.)
 	  
-* Rnw_vs_Rmd: These file both implement the same equation, table,
+* `Rnw_vs_Rmd`: These files implement the same equation, table,
   figure, and bibliographic references in Rnw (LaTeX plus R code) and
   Rmd (markdown plus R code) formats. There are formatting differences, but 
   on the whole the two are quite similar.`
@@ -22,4 +22,5 @@ This repository will store items useful in teaching R.
   * [`Rnw_vs_Rmd-Rmd.Rmd`](Rnw_vs_Rmd-Rmd.pdf) is the pdf produced from
     the  Rmd file
   
-  
+* [`dataframe_ops`](dataframe_ops/dataframe_ops.pdf) This simply
+  illustrates the many ways to references components of a dataframe.  
