@@ -9,7 +9,7 @@ output:
   beamer_presentation:
     slide_level: 2
     includes:
-      in_header: header-pageno.tex
+      in_header: ../header-pageno.tex
 toc: true
 urlcolor: 'cyan'
 ## following is workaround for pdfpages/xcolor package clash
@@ -91,7 +91,7 @@ sex, for each year.
 
 ## R: Base R
 
-* Many argue that looping in  R is always slow
+* You will often read that looping in R is slow
 * Beginning users often want to write loops
 * In this problem, there are loops with few iterations (over states and
   sex) and many iterations (over names)
@@ -169,7 +169,7 @@ xa <- aggregate(n ~ year + sex + name, data=x, FUN=sum)
 ## R with some loops
 
 
-\footnotesize
+\tiny
 
 ```{r solnbase_loop, eval=FALSE}
 x = read.csv('data/allstates.TXT', header=FALSE,
@@ -212,9 +212,8 @@ system.time({
 
 ## Without explicit loops
 
-* Using `by` to replace the year/sex loops leads to cleaner, more
-  "R-ish" code.
-* Perhaps less transparent? It is only slightly faster
+* Using `by` to replace the year/sex loops yields more
+  "R-ish" code. But it is only slightly faster
 
 \footnotesize
 
@@ -253,7 +252,7 @@ system.time({
 
 ## The `dplyr` approach
 
-* The `dplyr` package permits manipulation data with echoes of
+* The `dplyr` package permits data manipulation with echoes of
   SQL. 
 * There are explicit "verbs" for data manipulation tasks (sorting,
   filtering by row, selecting columns, grouping, summarizing, etc.)
