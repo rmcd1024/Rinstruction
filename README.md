@@ -1,4 +1,5 @@
-This repository will store items useful in teaching R.
+These are miscellaneous documents I've created related to teaching and
+understanding R.
 
 * [`install_packages.Rmd`](install_packages/install_packages.Rmd) You can distribute
   this as a markdown file.  You specify package names in the `pkgs`
