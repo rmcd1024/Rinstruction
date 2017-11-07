@@ -18,9 +18,9 @@ understanding R.
   figure, and bibliographic references in Rnw (LaTeX plus R code) and
   Rmd (markdown plus R code) formats. There are formatting differences, but 
   on the whole the two are quite similar.`
-  * [`Rnw_vs_Rmd/Rnw_vs_Rmd-Rnw.Rnw`](Rnw_vs_Rmd-Rnw.pdf) is the pdf produced from
+  * [`Rnw_vs_Rmd-Rnw.Rnw`](Rnw_vs_Rmd/Rnw_vs_Rmd-Rnw.pdf) is the pdf produced from
     the  Rnw file
-  * [`Rnw_vs_Rmd/Rnw_vs_Rmd-Rmd.Rmd`](Rnw_vs_Rmd-Rmd.pdf) is the pdf produced from
+  * [`Rnw_vs_Rmd-Rmd.Rmd`](Rnw_vs_Rmd/Rnw_vs_Rmd-Rmd.pdf) is the pdf produced from
     the  Rmd file
   
 * [`dataframe_ops`](dataframe_ops/dataframe_ops.pdf) This simply
