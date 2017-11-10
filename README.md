@@ -1,8 +1,7 @@
-Material related to R-based instruction
-=======================================
+#  Material related to R-based instruction
 
-Robert McDonald, Kellogg School, Northwestern University
-========================================================
+
+## Robert McDonald, Kellogg School, Northwestern University
 
 
 These are miscellaneous documents I've created related to teaching and
