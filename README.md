@@ -1,7 +1,9 @@
----
-title: Material related to R-based instruction
-author: Robert McDonald, Kellogg School, Northwestern University
----
+Material related to R-based instruction
+=======================================
+
+Robert McDonald, Kellogg School, Northwestern University
+========================================================
+
 
 These are miscellaneous documents I've created related to teaching and
 understanding R.
