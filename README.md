@@ -1,3 +1,9 @@
+---
+output:
+  github_document:
+    html_preview: false
+---
+
 #  Material related to R-based instruction
 
 ### *Robert McDonald, Kellogg School, Northwestern University*
