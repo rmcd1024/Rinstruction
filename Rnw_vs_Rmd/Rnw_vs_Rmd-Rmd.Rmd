@@ -5,7 +5,7 @@ author:
 - Robert McDonald\thanks{Kellogg School of Management, Northwestern University}
 - Joe Smith\thanks{Someother University}
 date: "`r format(Sys.Date(), '%B %e, %Y')`"
-bibliography: refs.bib
+bibliography: ../refs.bib
 latex-engine: xelatex
 thanks: Kellogg School of Management, Northwestern University 
 abstract: "It's possible to create a document using either 
@@ -39,6 +39,7 @@ library(kableExtra)
 opts_chunk$set(message=FALSE,
                comment=NA)
 names <- c('Mary', 'James')
+print(getwd())
 ```
 
 # Introduction 

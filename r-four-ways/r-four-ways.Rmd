@@ -4,17 +4,17 @@ author: |
     | Robert McDonald
     | Kellogg School, Northwestern University
 date: "`r Sys.Date()`"
-output:
-  html_document: default
-  beamer_presentation:
-    slide_level: 2
-    includes:
-      in_header: ../header-pageno.tex
-toc: true
-urlcolor: 'cyan'
+output: 
+    beamer_presentation:
+        slide_level: 2
+##        includes:
+##            in_header: ../header-pageno.tex
+##html_document: default
+##toc: true
+##urlcolor: 'cyan'
 ## following is workaround for pdfpages/xcolor package clash
-documentclass: beamer
-classoption: xcolor=dvipsnames
+##documentclass: beamer
+##classoption: xcolor=dvipsnames
 ---
 
 ```{r setup, include=FALSE}
@@ -259,7 +259,7 @@ system.time({
 * `dplyr` is very fast to code
 * Compare the `dplyr` code to the "no-loop" base R code
 
-## `dplyr` and `tidy` {#dplyr}
+## `dplyr` and `tidy` 
 
 
 \footnotesize
@@ -298,7 +298,7 @@ system.time({
 
 \newpage
 
-## R: `dplyr` with `map` {#dplyr_map}
+## R: `dplyr` with `map` 
 
 * The `purrr` functions `nest` and `map` can also be used.
 
@@ -459,7 +459,7 @@ system.time(y <- readRDS(file='/tmp/save.RDS'))
 ## Conclusion about reading and writing
 
 * Use `fread` and `fwrite` if the file is not small
-* When writing R files, do not use compression (the default) 
+* When writing files using `save`, set `compress=FALSE`
 * In the previous examples:
 	* differences in file *reading* speed would have been substantial
 	* differences in file *writing* speed would have been small,
@@ -491,11 +491,7 @@ conn = DBI::dbConnect(RPostgreSQL::PostgreSQL(),
                       )
 ```
 \normalsize
-
-
-\newpage
-
-
+ 
 
 ## R, using a connection to an SQL database
 
@@ -539,7 +535,7 @@ system.time({
 
 * Use `show_query()` to examine the query constructed by `dplyr`
 
-\tiny
+\scriptsize
 
 ```{r showquery, message=TRUE, eval=evalsql}
 show_query(tmp)
@@ -558,6 +554,10 @@ show_query(tmp)
 ```{sql state, connection=conn, eval=evalsql}
 select count(distinct state) from names;
 ```
+
+## Manipulation using SQL, continued
+
+\scriptsize
 
 ```{sql year, connection=conn, eval=evalsql}
 select count(distinct year) from names;
@@ -641,6 +641,20 @@ cut -d, -f3 data/allstates.TXT | uniq | sort | uniq | wc -l
 ```{bash}
 ## Number of names
 cut -d, -f4 data/allstates.TXT | uniq | sort | uniq | wc -l
+```
+
+\normalsize
+
+*  Finally, this is included just for fun: sort the entire original
+   file from the command line, using multiple sort keys
+
+\footnotesize
+
+```{bash, eval=FALSE}
+## Sort the entire original data set by name, n (descending), year,
+## state. "-t ," specifies delimeter, and the others are sort
+## keys. See "man sort"
+sort -t , -k 4,4d -k 5,5nr -k 3,3n -k 1,1d allstates.TXT > out.csv 
 ```
 
 \normalsize
