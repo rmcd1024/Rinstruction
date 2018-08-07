@@ -25,6 +25,7 @@ number_sections: true
 header-includes: 
    - \usepackage{titletoc}
    - \usepackage{appendix}
+   - \usepackage{booktabs}
 ---
 
 \thispagestyle{empty}
@@ -39,7 +40,6 @@ library(kableExtra)
 opts_chunk$set(message=FALSE,
                comment=NA)
 names <- c('Mary', 'James')
-print(getwd())
 ```
 
 # Introduction 
@@ -79,6 +79,10 @@ tbl <- left_join(topnames, babynames) %>%
     rename(Name=name) %>%
     kable(caption='Top 10 names, 1880-2015\\label{tbl:top10}',
           digits=4,
+          booktabs=TRUE,
+          vline='',
+          linesep='',
+          format='latex',
           format.args=list(big.mark=','),
           align='lccc'
           ) 
