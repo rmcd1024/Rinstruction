@@ -5,7 +5,7 @@ author:
 - Robert McDonald\thanks{Kellogg School of Management, Northwestern University}
 - Joe Smith\thanks{Someother University}
 date: "`r format(Sys.Date(), '%B %e, %Y')`"
-bibliography: refs.bib
+bibliography: ../refs.bib
 latex-engine: xelatex
 thanks: Kellogg School of Management, Northwestern University 
 abstract: "It's possible to create a document using either 
@@ -25,6 +25,7 @@ number_sections: true
 header-includes: 
    - \usepackage{titletoc}
    - \usepackage{appendix}
+   - \usepackage{booktabs}
 ---
 
 \thispagestyle{empty}
@@ -78,6 +79,10 @@ tbl <- left_join(topnames, babynames) %>%
     rename(Name=name) %>%
     kable(caption='Top 10 names, 1880-2015\\label{tbl:top10}',
           digits=4,
+          booktabs=TRUE,
+          vline='',
+          linesep='',
+          format='latex',
           format.args=list(big.mark=','),
           align='lccc'
           ) 
