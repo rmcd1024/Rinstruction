@@ -9,7 +9,8 @@ There are typically several different ways to accomplish a specific
 task in R. The purpose of this document is to illustrate different
 ways to undertake operations on data frames. Even if you prefer one
 method and stick to it, the odds are that you will encounter examples
-and co-workers who have different preferences. 
+using different techniques and co-workers who have different
+preferences.
 
 
 Here are the libraries we will use:
@@ -91,7 +92,32 @@ c5 <- df['flour']
 c6 <- df %>% select(flour)
 class(c5)  ## this is a dataframe
 all.equal(c5, c6)
+```
+
+It is *very important* to understand that in base R, `df[, 'flour']`
+and `df['flour']` are different operations. They appear similar, but
+the first extracts and the second subsets:
+
+```{r}
+c1 <- df[, 'flour']
+c5 <- df['flour']  
 all.equal(c1, c5)  ## a vector and dataframe are not the same!
+```
+The object `c1` is a vector. The object `c5` is a subset, a new
+dataframe consisting of the `flour` column from the original
+dataframe. When you perform operations on a `tibble`, you get a new
+`tibble`. If you want a vector, you have to ask for a vector by using
+the extraction function `[[1]]` (which I recommend) or by using the
+dplyr `pull` function`. 
+
+```{r}
+test1 = dft[, 'flour']
+test2 = dft['flour']
+test3 = dft %>% select(flour)
+all.equal(test1, test2)
+all.equal(test1, test3)
+all.equal(c1, test1[[1]])
+all.equal(c1, pull(test1))
 ```
 
 
