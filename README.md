@@ -5,9 +5,11 @@ Material related to R-based instruction
 
 These are miscellaneous documents I’ve created related to teaching and
 understanding R.
-  - [`software-setup`](https://github.com/rmcd1024/software-setup/blob/gh-pages/software-setup.html)
+
+    <!--  - [`software-setup`](https://github.com/rmcd1024/software-setup/blob/gh-pages/software-setup.pdf)
     This provides instruction for installing R, RStudio, and LaTeX,
     and points to a document you can use to test your installation.
+    -->
   - [`install_packages.Rmd`](install_packages/install_packages.Rmd) You
     can distribute this as a markdown file. You specify package names in
     the `pkgs` variable. You have others compile the file in RStudio
