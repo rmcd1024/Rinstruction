@@ -1,6 +1,7 @@
 ---
 title: Data frame operations
 author: Robert McDonald
+date: "`r Sys.Date()`"
 bibliography: ../refs.bib
 toc: true
 output: 
@@ -26,21 +27,18 @@ summarizing, etc.
 There are generally multiple ways to undertake a given dataframe
 manipulation in base R. The variety can be confusing, but to make
 things more complicated, Hadley Wickham has introduced tibbles as an
-an alternative to dataframes. The bad news is that tibbles behave
-differently than dataframes in certain respects. However, this is also
-the good news, because tibbles standardize and simplify behavior. In
-order to accomplish this, tibbles by definition have to behave
-differently than dataframes.
+an alternative to dataframes. As we will see, tibbles standardize and
+simplify behavior. This necessarily means that they behave differently
+than data frames in certain respects.
+
+I recommend that you use tibbles. Although tibbles are sometimes
+annoying, they behave more consistently than data frames and there is
+less to remember. 
 
 
-In this document I am going to recommend that you use tibbles.
-Although they are sometimes annoying, they behave more consistently
-than data frames and there is less to remember.
-
-
-Two terms that we will use frequently require careful defintion. Here
-is what we mean by "subsetting" a data frame and and "extraction" from
-a data frame:
+Much of this document concerns the closely related concept of
+*subsetting* a data frame (or tibble), and *extracting* from a data
+frame (or tibble).  Here is what we mean by these terms:
 
 * **subsetting**  means creating a new object that has fewer
   rows or columns, but where the new object has the same class as the
@@ -76,11 +74,12 @@ opts_chunk$set(collapse=TRUE,
 
 # Dataframes vs tibbles
 
-## Creating dataframes and tibbles
+## Creating dataframes 
 
-We begin by defining two data frames, named `df0` and `df`:^[This
-example was inspired by @ruhlman:09. Ratios are by weight. Any errors
-related to recipes baking details are mine.]
+We begin by defining two data frames, named `df0` and `df`, which
+contain recipe information:^[This example was inspired by
+@ruhlman:09. Ratios are by weight. Any errors related to recipes
+baking details are mine.]
 
 ```{r}
 df0 <- data.frame(what=c('crust', 'cookie', 'cake', 'pasta'),
@@ -107,6 +106,8 @@ factors. To change this behavior, it is common to set
 `stringsAsFactors=FALSE`, as when creating `df`. In the rest of this
 document we will assume that we do *not* want strings automatically
 converted to factors.
+
+## Creating tibbles
 
 We now create a tibble, `dft`, using the same inputs. The `tibble`
 function does not convert strings to factors:
@@ -154,7 +155,7 @@ options(digits=2 ## how many digits to print?
 
 
 
-## Operators
+## Subsetting and extraction operators
 
 When dealing with dataframes and tibbles there are three data
 subsetting and extraction constructs we need to understand:
@@ -166,9 +167,15 @@ subsetting and extraction constructs we need to understand:
 * "`$`" The dollar sign also *extracts*, serving the same purpose as
   double square brackets
 
-## Extract one column from a dataframe
+## Extracting a column
+
+A common operation with data frames is to create a subset by
+extracting columns. We will illustrate ways to do this with both
+dataframes and tibbles.
+
+### Extract one column from a dataframe
     
-Suppose we want to extract the flour column:
+Suppose we want to extract the flour column from the dataframe `df`:
 
 ```{r}
 c1 <- df[, 'flour']
@@ -184,10 +191,13 @@ mean(c2)
 mean(c3)
 mean(c4)
 ```
-Note that in every case we have a numeric vector, and we can conpute
+Note that in every case we have a numeric vector, and we can compute
 the mean of this vector.
 
-## Extract one column from a tibble
+### Extract one column from a tibble
+
+We repeat the previous syntax, only operating on a tibble rather than
+a dataframe.
 
 ```{r}
 c1t <- dft[, 'flour']  ## This subsets but does not extract!
@@ -199,39 +209,68 @@ all.equal(c1t, c2t)
 all.equal(c2t, c3t)
 all.equal(c3t, c4t)
 mean(c1t)
-mean(unlist(c1t))
 mean(c2t)
 mean(c3t)
 mean(c4t)
 ```
 
-Here we see an **important** difference between a dataframe and a
+Note that `c1t` is not a numeric vector and thus we cannot compute its
+mean.  If you wish to compute the mean of a
+tibble column, you need to convert it to a numeric vector
+
+
+```{r}
+test1 <- dft[, 'flour']
+test2 <- dft['flour']
+test3 <- dft %>% select(flour)
+test4 <- dft %>% select(flour) %>% summarize(mean=mean(flour))
+all.equal(test1, test2)
+all.equal(test1, test3)
+all.equal(c1, test1[[1]])
+all.equal(c1, pull(test1))
+mean(test1[[1]])  
+mean(pull(test1))
+test4
+test4[[1]]
+```
+
+Notice that test4 is a tibble! The dplyr functions return a tibble,
+even when you have just computed a single number.
+
+### Discussion
+
+The last example illustrates  an **important** difference between a dataframe and a
 tibble. If we extract the flour column from the tibble using the
 single bracket, the single column remains a tibble. If we extract the
 flour column from the data frame using the same syntax, the single
 column is converted to a vector. 
 
 Contrast this with extracting the flour column from either `df` or
-`dft` using double brackets or the `$` synonym, which creates a
-numeric vector. The tibble behavior is, in my opinion, appropriate,
-because the single bracket is a subsetting operator, not an extraction
-operator. You might ask why we care. The issue in this case is that
-the `mean` function cannot operate directly on either a dataframe or
-tibble column. It can only operate on a vector. Using `unlist`
-permits us to calculate the mean of `c1t`.
+`dft` using double brackets or the `$` synonym, either of which
+creates a numeric vector. The tibble behavior is, in my opinion,
+appropriate, because the single bracket is a subsetting operator, not
+an extraction operator. You might ask why we care. The issue in this
+case is that the `mean` function (for example) cannot operate directly
+on either a dataframe or tibble column. It can only operate on a
+vector. Using either `[[1]]` or `pull` permits us to calculate the
+mean of `c1t`.^[There is also an `unlist` function. This creates a
+named vector. I find `[[1]]` or pull to be cleaner solutions.] The
+tibble philosophy is that if you use a subset operator on a tibble,
+you get a tibble.
 
-By contrast with the tibble, you extract the column from the dataframe
-when using the subset operator, "`[`". This might seem innocuous,
-but it causes confusion, because if you specify *two* columns, you
-create a subset without extracting. So the behavior of "`[`" depends
-on how you use it. In my experience this causes confusion. 
+Here is another example:
 
-This behavior of tibbles may seem annoying if you are acccustomed to
-the behavior of data frames, but it creates consistency: single
-brackets are for *subsetting*, not for extraction. Tibbles maintain
-this consistency, dataframes do not.
+```{r}
+onecol <- df[, c('flour')]  ## this is a vector
+twocol <- df[, c('flour', 'liquid')]  ## this is a dataframe
+```
 
-Another source of confusion is that that single brackets behave
+You can see that you get a different structure when you extract one or
+two columns from a dataframe. Extracting a single column gives you a
+numeric vector, while extracting two columns gives you a
+dataframe. 
+
+Another source of confusion with dataframes is that that single brackets behave
 differently with a dataframe depending upon whether or not there is a
 row indicator in the expression:
 
@@ -247,7 +286,16 @@ class(c5)  ## this is a dataframe
 all.equal(c5, c6)
 all.equal(c5, c5t)
 all.equal(c1, c5)  ## a vector and dataframe are not the same!
+all.equal(c1, c5[[1]])
 ```
+
+The object `c1` is a vector. The object `c5` is a subset, a new
+dataframe consisting of the `flour` column from the original
+dataframe. When you perform operations on a `tibble`, you get a new
+`tibble`. If you want a vector, you have to ask for a vector by using
+the extraction function `[[1]]` (which I recommend) or by using the
+dplyr `pull` function`. 
+
 
 ## Subsetting vs extraction
 
@@ -258,7 +306,7 @@ inconsistent. If column 1 is numeric and column 2 is character, there
 is no common data structure which you can extract them, other than a
 list, for example a dataframe or tibble.
 
-Of course you *can* subset multiple columns at once, because you are
+Of course you can *subset* multiple columns at once, because you are
 retaining the data frame or tibble from which subset.
 
 ## Add a column
@@ -279,9 +327,10 @@ kable(df1)
 
 Very important: Notice that when using `dplyr` to construct `df3`, no
 quotes are needed. When using base R, quotes are needed for column
-names. The absence of quotation within the `dplyr` universe is great,
-but it can be very tricky (and frustrating) to mix `dplyr` and base
-R. My advice is to stick with one or the other as much as possible.
+names. The absence of quotation within the `dplyr` universe is a
+helpful simplification, but it is easy to become confused if you mix
+`dplyr` and base R. My advice is to stick with one or the other as
+much as possible.
 
 ## Delete columns
 
