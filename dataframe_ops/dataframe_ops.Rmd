@@ -36,9 +36,9 @@ annoying, they behave more consistently than data frames and there is
 less to remember. 
 
 
-Much of this document concerns the closely related concept of
-*subsetting* a data frame (or tibble), and *extracting* from a data
-frame (or tibble).  Here is what we mean by these terms:
+Much of this document discusses  the closely related concepts of
+*subsetting* a data frame, and *extracting* from a data
+frame.  Here is what we mean by these terms:
 
 * **subsetting**  means creating a new object that has fewer
   rows or columns, but where the new object has the same class as the
@@ -68,7 +68,8 @@ library(knitr)
 library(tidyverse)
 opts_chunk$set(collapse=TRUE,
                message=FALSE,
-               comment=NA
+               comment=NA,
+               lazy.cache=FALSE
                )
 ```
 
@@ -78,8 +79,8 @@ opts_chunk$set(collapse=TRUE,
 
 We begin by defining two data frames, named `df0` and `df`, which
 contain recipe information:^[This example was inspired by
-@ruhlman:09. Ratios are by weight. Any errors related to recipes
-baking details are mine.]
+@ruhlman:09. Ratios are by weight. Any errors related to recipe ratios
+are mine.]
 
 ```{r}
 df0 <- data.frame(what=c('crust', 'cookie', 'cake', 'pasta'),
@@ -127,20 +128,20 @@ Although `df` and `dft` contain the same data with the same data
 types, the `all.equal` function will complain that `df` and `dft` have
 different classes unless we specify `check.attributes=FALSE`.
 
-The data frame looks like this:
+The printed data frame looks like this:
 ```{r}
 kable(df)
 ```
 
-The tibble looks like this:
+The printed tibble looks identical to the printed data frame:
 
 ```{r}
 kable(dft)
 ```
 
-When dealing with tibbles it can be helpful to customize printing
-options, i.e the way the data appears when you type the name of the
-tibble in the console. You can get a list of available options with
+When dealing with tibbles it can be helpful to customize the options
+that govern the way a tibble appears when you print it in the
+console. You can get a list of available options with
 `?tibble::tibble-options`. I like the following settings, but you can
 do something different and you can change them at any time by issuing
 another `options` command.
@@ -221,13 +222,7 @@ tibble column, you need to convert it to a numeric vector
 
 ```{r}
 test1 <- dft[, 'flour']
-test2 <- dft['flour']
-test3 <- dft %>% select(flour)
 test4 <- dft %>% select(flour) %>% summarize(mean=mean(flour))
-all.equal(test1, test2)
-all.equal(test1, test3)
-all.equal(c1, test1[[1]])
-all.equal(c1, pull(test1))
 mean(test1[[1]])  
 mean(pull(test1))
 test4
@@ -235,7 +230,8 @@ test4[[1]]
 ```
 
 Notice that test4 is a tibble! The dplyr functions return a tibble,
-even when you have just computed a single number.
+even when you have just computed a single number. We can extract the
+result using `[[1]]`.
 
 ### Discussion
 
@@ -268,7 +264,7 @@ twocol <- df[, c('flour', 'liquid')]  ## this is a dataframe
 You can see that you get a different structure when you extract one or
 two columns from a dataframe. Extracting a single column gives you a
 numeric vector, while extracting two columns gives you a
-dataframe. 
+dataframnote. 
 
 Another source of confusion with dataframes is that that single brackets behave
 differently with a dataframe depending upon whether or not there is a
@@ -278,15 +274,7 @@ row indicator in the expression:
 c1 <- df[, 'flour'] ## this is a vector of length 4
 c5 <- df['flour']   ## this is a dataframe (list) of length 1
 all.equal(c1, c5) ## c1 and c5 differ
-c1t <- dft[, 'flour']
-c5t <- dft['flour']
-all.equal(c1t, c5t)  ## c1t and c5t are the same 
-c6 <- select(df, flour)
-class(c5)  ## this is a dataframe
-all.equal(c5, c6)
-all.equal(c5, c5t)
-all.equal(c1, c5)  ## a vector and dataframe are not the same!
-all.equal(c1, c5[[1]])
+all.equal(c1, c5[[1]]) ## the same
 ```
 
 The object `c1` is a vector. The object `c5` is a subset, a new
