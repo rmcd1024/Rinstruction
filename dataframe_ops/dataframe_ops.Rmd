@@ -205,7 +205,7 @@ c1t <- dft[, 'flour']  ## This subsets but does not extract!
 c2t <- dft$flour
 c3t <- dft[['flour']]
 c4t <- dft['flour'][[1]]
-class(c1)  ## this is a tibble, not a vector
+class(c1t)  ## this is a tibble, not a vector
 all.equal(c1t, c2t)
 all.equal(c2t, c3t)
 all.equal(c3t, c4t)
@@ -215,9 +215,10 @@ mean(c3t)
 mean(c4t)
 ```
 
-Note that `c1t` is not a numeric vector and thus we cannot compute its
-mean.  If you wish to compute the mean of a
-tibble column, you need to convert it to a numeric vector
+Because `c1t` is not a numeric vector, we cannot compute its mean. If
+you wish to compute the mean of a tibble column, you need to convert
+it to a numeric vector or else use  `base::colMeans`", which is
+designed to operate on data frames.
 
 
 ```{r}
@@ -225,6 +226,7 @@ test1 <- dft[, 'flour']
 test4 <- dft %>% select(flour) %>% summarize(mean=mean(flour))
 mean(test1[[1]])  
 mean(pull(test1))
+colMeans(test1)
 test4
 test4[[1]]
 ```
@@ -235,7 +237,7 @@ result using `[[1]]`.
 
 ### Discussion
 
-The last example illustrates  an **important** difference between a dataframe and a
+The last example illustrates  an important difference between a dataframe and a
 tibble. If we extract the flour column from the tibble using the
 single bracket, the single column remains a tibble. If we extract the
 flour column from the data frame using the same syntax, the single
@@ -249,8 +251,10 @@ an extraction operator. You might ask why we care. The issue in this
 case is that the `mean` function (for example) cannot operate directly
 on either a dataframe or tibble column. It can only operate on a
 vector. Using either `[[1]]` or `pull` permits us to calculate the
-mean of `c1t`.^[There is also an `unlist` function. This creates a
-named vector. I find `[[1]]` or pull to be cleaner solutions.] The
+mean of `c1t`.^[There is also an `unlist` function. By default, this
+creates a named vector, although you can prevent the creation of names
+by specifying an option, as in `unlist(test1, use.names=FALSE)`. I
+find `[[1]]` or the `pull` function to be cleaner solutions.]  The
 tibble philosophy is that if you use a subset operator on a tibble,
 you get a tibble.
 
@@ -291,8 +295,8 @@ The important thing to remember about extraction is that *you can't
 extract multiple columns at once.* The reason is that you can't know
 in advance the class of the extracted columns and they may be
 inconsistent. If column 1 is numeric and column 2 is character, there
-is no common data structure which you can extract them, other than a
-list, for example a dataframe or tibble.
+is no common data structure to which you can extract them, other than
+a list. Dataframe and tibble are both lists.
 
 Of course you can *subset* multiple columns at once, because you are
 retaining the data frame or tibble from which subset.
