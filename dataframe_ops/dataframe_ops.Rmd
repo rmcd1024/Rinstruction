@@ -15,18 +15,29 @@ geometry:
 
 # Basic operations on dataframes
 
-Your data in R will typically reside in one or more dataframes, which
-are rectangular data containers, like a spreadsheet worksheet.  A
-given dataframe can store multiple types of data at once, subject to
-the restriction that any given column only contains data of one type
-(numeric, character, logical, etc.).  When performing your analysis,
-you will undertake basic data operations, which can include extracting
+Data in R commonly resides in one or more dataframes, which are
+rectangular data containers, like a spreadsheet worksheet.  A given
+dataframe can store multiple types of data at once, subject to the
+restriction that any given column only contains data of one type
+(numeric, character, logical, etc.).  When performing analysis,
+you undertake basic data operations, which can include extracting
 subsets of the data frame, deleting rows and columns, adding rows and
 columns, sorting, renaming, summarizing, etc.
 
 There are different methods you can use to accomplish any given
-manipulation of a dataframe. The purpose of this note is to illustrate the
-various methods and explain which are equivalent. 
+manipulation of a dataframe. To complicate things further, there are
+three different versions of a dataframe: 
+
+  * classic dataframes
+  * tibbles, which are the basic data structure of the `tidyverse`
+  * datatables, which are the basic data structure ot the
+  `data.table` package. 
+  
+The purpose this note is to discuss subsetting and data extraction for
+the three structures, and to illustrate several cases where the
+apparent same operation generates different results. The focus will be
+on dataframes and tibbles, but I will discuss datatables where it is
+relevant.
 
 Much of this document discusses  the closely related concepts of
 *subsetting* a data frame, and *extracting* from a data
@@ -57,14 +68,13 @@ extract multiple columns at once.* The reason is that you can't know
 in advance the class of the extracted columns and they may be
 inconsistent. If column 1 is numeric and column 2 is character, there
 is no common data structure to which you can extract them, other than
-the dataframe or tibble in which they reside.^[Dataframes and tibbles
-are both lists, which is why they can contain columns of different
-vector classes.]
+the dataframe or tibble in which they reside, or a list.^[Dataframes
+and tibbles are both lists, which is why they can contain columns of
+different vector classes.]
 
-Of course you can *subset* multiple columns at once, because you are
-retaining the dataframe or tibble from which subset.
-
-
+You can *subset* multiple columns at once, because you are retaining
+the data structure (dataframe or tibble) from which you create the
+subset.
 
 You may find that you have a preferred way of performing the various
 operations.  Even if you prefer one construct and stick to it, odds
@@ -79,6 +89,7 @@ understanding of R in general and dataframes in particular.
 ```{r, echo=TRUE, message=FALSE, include=FALSE}
 library(knitr)
 library(tidyverse)
+library(data.table)
 opts_chunk$set(collapse=TRUE,
                message=FALSE,
                comment=NA,
@@ -170,15 +181,31 @@ options(digits=2 ## how many digits to print? Not specific to tibbles
 ```
 
 
+## Creating datatables
 
-## Subsetting and extraction operators
+A datatable closely resembles a data frame:
+
+```{r}
+dfdt <- data.table(what=c('crust', 'cookie', 'cake', 'pasta'),
+    flour=c(3, 3, 1, 3),
+    butter=c(2, 2, 1, 0),
+    liquid=c(1, 0, 0, 0),
+    sugar=c(0, 1, 1, 0),
+    egg=c(0, 0, 1, 2)
+    )
+all.equal(df, dfdt, check.attributes=FALSE)
+```
+
+
+# Subsetting and extraction operators
 
 When dealing with dataframes and tibbles there are three data
 subsetting and extraction constructs we need to understand:
 
 * "`[`" Single square brackets are used to *subset*. (There is an
   important exception to this with dataframes, for which subsetting to
-  a single column also extracts. This does not happen with tibbles.)
+  a single column also extracts. This does not happen with
+  tibbles. There is also )
 * "`[[`" Double square brackets *extract* a single column at a time
 * "`$`" The dollar sign also *extracts*, serving the same purpose as
   double square brackets
@@ -278,9 +305,41 @@ prevent the creation of names by specifying an option:
 `unlist(test1, use.names=FALSE)`. I find `[[1]]` or the `pull`
 function to be cleaner solutions.
 
+### Extract one column from a datatable`
+
+Repeat as before:
+
+```{r}
+c1dt <- dfdt[, 'flour']  ## This subsets but does not extract!
+c2dt <- dfdt$flour
+c3dt <- dfdt[['flour']]
+## c4dt <- dfdt['flour'][[1]] ## this fails
+class(c1dt)  ## this is a tibble, not a vector
+all.equal(c1dt, c2dt)
+all.equal(c2dt, c3dt)
+mean(c1dt)
+mean(c2dt)
+mean(c3dt)
+```
+
+It is important to understand why the fourth line fails. Consider these
+expressions. I will not execute them, but you should try:
+
+```{r, eval=FALSE}
+df[2]  ## returns the `flour` column
+dfdt[2] ## returns the second row, not the second column!
+dfdt['flour']  ## fails -- there is no row named 'flour'
+```
+
+A datatable column cannot be subset using single
+brackets. Essentially a datatable is more like a matrix. This is an
+important difference that can be hard to debug if you're not expecting
+this behavior.
+
+
 ### Subsetting tibbles produces tibbles
 
-The last example illustrates that subsetting and summarizing
+The tibble examples illustrate that subsetting and summarizing
 operations on tibbles produce tibbles.  If we extract the flour column
 from the tibble using the single bracket, the single column remains a
 tibble. If we extract the flour column from the dataframe using the
@@ -326,6 +385,24 @@ dataframe. When you perform operations on a `tibble`, you get a new
 `tibble`. If you want a vector, you have to ask for a vector by using
 the extraction function `[[1]]` (which I recommend) or by using the
 dplyr `pull` function`. 
+
+### Subsetting differs with a datatable
+
+The datatable behavior is superficially similar to the behavior of
+dataframes and tibbles, but it is different. In fact, the datatable is
+a structure with a rich syntax that permits you to sort, extract, join,
+create computed columns, etc, all using a dataframe-like syntax. The
+`data.table` package exists because it is dramatically faster than
+traditional and `dplyr` operations. There
+are two things to know about this:
+
+1. You can use the [datatable
+   syntax](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-intro.html)
+   in lieu of traditional dataframe and `dplyr` operations
+2. You can use the [`dtplyr`
+   package](https://cran.r-project.org/package=dtplyr) and get most of
+   the benefits of datatable's speed using the `dplyr` syntax. Be
+   aware that this is a work in progress.
 
 
 ## Add a column
